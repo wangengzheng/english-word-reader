@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>分析结果 · 英文点读</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%235b52e8'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='white' font-family='Georgia'%3EAa%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="reader">
+  <header class="topbar">
+    <a class="btn ghost small" href="/">← 返回编辑</a>
+    <span class="top-title">分析结果</span>
+    <div class="top-right">
+      <span id="stat" class="chip">统计中…</span>
+      <button id="themeBtn" class="icon-btn theme-toggle" type="button" title="切换主题">🌙</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="hint" class="hint">
+      <span>✨ 带有<b style="color:var(--word);border-bottom:2px dotted var(--word);font-weight:inherit;">虚线下划线</b>的单词已命中本地词库，点击即可查看讲解卡片；<kbd>Esc</kbd> 可随时关闭。</span>
+      <button id="hintClose" class="x" type="button" title="不再提示">✕</button>
+    </div>
+
+    <article id="article" class="article"></article>
+
+    <div id="empty" class="empty hidden">
+      <div class="big">📝</div>
+      <p>还没有要分析的文本</p>
+      <a class="btn primary" href="/">去输入</a>
+    </div>
+  </main>
+
+  <div id="scrim" class="scrim"></div>
+
+  <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="单词卡片">
+    <header class="drawer-head">
+      <button id="backBtn" class="icon-btn hidden" type="button" title="返回">←</button>
+      <div id="wordTitle" class="head-word">word</div>
+      <span id="fileChip" class="chip file">…</span>
+      <button id="closeBtn" class="icon-btn close" type="button" title="关闭 (Esc)">✕</button>
+    </header>
+    <div id="drawerBody" class="drawer-body">
+      <div id="loading" class="spinner hidden" role="status" aria-label="加载中"></div>
+      <div id="mdContent" class="md"></div>
+      <div id="mdError" class="md-error hidden"></div>
+    </div>
+    <footer class="drawer-foot">
+      <button id="footClose" class="btn ghost wide" type="button">关闭 <kbd>Esc</kbd></button>
+    </footer>
+  </aside>
+
+  <script src="/theme.js"></script>
+  <script src="/md.js"></script>
+  <script src="/analyze.js"></script>
+</body>
+</html>
