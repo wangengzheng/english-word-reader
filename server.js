@@ -30,6 +30,7 @@ const MIME = {
   '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
   '.webp': 'image/webp',
+  '.bmp': 'image/bmp',
   '.ico': 'image/x-icon',
 };
 
@@ -206,11 +207,22 @@ async function handler(req, res) {
   if (p.startsWith('/dict-asset/') && req.method === 'GET') {
     const name = p.slice('/dict-asset/'.length);
     const ext = path.extname(name).toLowerCase();
-    const full = path.resolve(DICT_DIR, name);
-    if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]*$/.test(name) || name.includes('..') || !ASSET_EXT.has(ext)) {
+    // 1) 只接受单层安全文件名：拒绝路径分隔符、绝对路径、.. 穿越等
+    if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]*$/.test(name) || !ASSET_EXT.has(ext)) {
       return json(res, 403, { error: 'not allowed' });
     }
-    if (!full.startsWith(path.resolve(DICT_DIR) + path.sep)) return json(res, 403, { error: 'not allowed' });
+    // 2) basename 兜底剥离目录成分后再拼接
+    const full = path.join(path.resolve(DICT_DIR), path.basename(name));
+    // 3) 解析真实路径（跟随符号链接），确认仍位于词库目录内
+    try {
+      const dictReal = fs.realpathSync(path.resolve(DICT_DIR));
+      const real = fs.realpathSync(full);
+      if (real !== dictReal && !real.startsWith(dictReal + path.sep)) {
+        return json(res, 403, { error: 'not allowed' });
+      }
+    } catch {
+      return json(res, 404, { error: 'not found' });
+    }
     return sendFile(res, full);
   }
 
