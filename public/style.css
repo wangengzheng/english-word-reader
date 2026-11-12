@@ -112,6 +112,8 @@ a { color: var(--accent); }
 }
 .chip b { color: var(--accent-ink); font-weight: 700; }
 .chip.file { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .74rem; background: var(--word-bg); border-color: transparent; }
+.chip.cam { color: var(--accent-ink); text-decoration: none; cursor: pointer; transition: background .16s ease, border-color .16s ease; }
+.chip.cam:hover { border-color: var(--accent); background: var(--word-bg); }
 
 kbd {
   background: var(--card); border: 1px solid var(--line); border-bottom-width: 2px;
@@ -205,6 +207,16 @@ kbd {
 .w.read { color: var(--word-visited); border-bottom-style: solid; border-bottom-color: var(--word-visited); }
 .w.read:hover { color: var(--word); background: var(--word-bg); border-bottom-color: var(--word); }
 
+/* 音标链接 /kæn/ —— 与可点击单词同款样式，新标签页打开发音站 */
+.md a.ipa {
+  color: var(--word); text-decoration: none;
+  border-bottom: 2px dotted var(--word); border-radius: 3px;
+  white-space: nowrap;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+.md a.ipa:hover { background: var(--word-bg); border-bottom-style: solid; }
+.md a.ipa:active { transform: translateY(1px); }
+
 .empty { text-align: center; padding: 80px 30px; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .empty .big { font-size: 2.6rem; margin-bottom: 12px; }
 .empty p { margin: 0 0 22px; font-size: 1.02rem; }
@@ -231,6 +243,11 @@ kbd {
 }
 .drawer.on { transform: translateX(0); }
 @media (max-width: 640px) { .drawer { width: 100%; border-radius: 0; } }
+@media (max-width: 560px) {
+  .drawer-head { gap: 8px; }
+  .chip.file { display: none; }
+  .chip.cam { padding: 4px 10px; font-size: .74rem; }
+}
 
 .drawer-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
 .head-word {
@@ -250,6 +267,48 @@ kbd {
   background: rgba(229, 72, 77, .08); border: 1px solid rgba(229, 72, 77, .3);
   color: var(--danger); border-radius: 12px; padding: 14px 16px; font-size: .92rem;
 }
+
+/* ------------------------------------------------------------------
+   分享弹窗 & 轻提示
+   ------------------------------------------------------------------ */
+
+.share-modal {
+  position: fixed; inset: 0; z-index: 80;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: rgba(16, 18, 40, .5); backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.share-modal.on { opacity: 1; pointer-events: auto; }
+.share-card {
+  width: min(620px, 100%); background: var(--card);
+  border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow);
+  padding: 22px 24px;
+  transform: translateY(14px) scale(.98); transition: transform .25s ease;
+}
+.share-modal.on .share-card { transform: none; }
+.share-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.share-title { font-weight: 700; font-size: 1.05rem; flex: 1; }
+.share-row { margin-bottom: 15px; }
+.share-row > label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 7px; font-weight: 600; }
+.share-url { display: flex; gap: 8px; align-items: center; }
+.share-url input {
+  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg);
+  color: var(--ink); border-radius: 10px; padding: 10px 12px;
+  font: 12.5px/1.4 ui-monospace, Menlo, Consolas, monospace;
+}
+.share-url input:focus { outline: none; border-color: var(--accent); }
+.share-note { margin: 7px 0 0; font-size: .78rem; color: var(--muted); line-height: 1.5; }
+.share-foot { display: flex; justify-content: flex-end; margin-top: 2px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 34px; z-index: 90;
+  transform: translate(-50%, 16px);
+  background: var(--ink); color: var(--card);
+  padding: 10px 18px; border-radius: 999px; font-size: .86rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .25s ease;
+}
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
 
 /* ------------------------------------------------------------------
    Markdown 内容排版

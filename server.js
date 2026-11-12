@@ -13,6 +13,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT) || 7610;
@@ -146,6 +147,47 @@ function readJson(req) {
 const normKey = (raw) => String(raw).toLowerCase().replace(/[’‘]/g, "'");
 
 /* ------------------------------------------------------------------ */
+/* 分享：短链接 /s/<id>（持久化到 data/shares.json，重启不丢）          */
+/* ------------------------------------------------------------------ */
+
+const DATA_DIR = path.join(__dirname, 'data');
+const SHARES_FILE = path.join(DATA_DIR, 'shares.json');
+const SHARE_MAX = 1000;
+const SHARE_TEXT_MAX = 200_000;
+
+let shares = new Map(); // id -> { t: text, ts, h: sha1 }
+try {
+  const raw = JSON.parse(fs.readFileSync(SHARES_FILE, 'utf8'));
+  for (const [id, v] of Object.entries(raw)) {
+    if (v && typeof v.t === 'string') shares.set(id, v);
+  }
+} catch (e) { /* 首次运行没有文件 */ }
+
+function saveShares() {
+  try {
+    const entries = [...shares.entries()].sort((a, b) => b[1].ts - a[1].ts).slice(0, SHARE_MAX);
+    shares = new Map(entries);
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(SHARES_FILE, JSON.stringify(Object.fromEntries(shares)));
+  } catch (e) { /* 存储失败不影响主功能 */ }
+}
+
+async function createShare(req, res) {
+  const body = await readJson(req);
+  const text = body && typeof body.text === 'string' ? body.text : '';
+  if (!text.trim()) return json(res, 400, { error: 'text is empty' });
+  if (text.length > SHARE_TEXT_MAX) return json(res, 413, { error: 'text too long (max 200000 chars)' });
+  // 内容即地址：id = 内容 MD5 的前 16 位（同内容永远同链接，天然去重）
+  const md5hex = crypto.createHash('md5').update(text, 'utf8').digest('hex');
+  let id = md5hex.slice(0, 16);
+  const prev = shares.get(id);
+  if (prev && prev.t !== text) id = md5hex; // 截断碰撞的极端兜底 → 用全长 MD5
+  shares.set(id, { t: text, ts: Date.now(), h: id });
+  saveShares();
+  return json(res, 200, { id });
+}
+
+/* ------------------------------------------------------------------ */
 /* 路由                                                                */
 /* ------------------------------------------------------------------ */
 
@@ -159,6 +201,7 @@ const STATIC_ROUTES = {
   '/index.js': 'index.js',
   '/analyze.js': 'analyze.js',
   '/md.js': 'md.js',
+  '/share-codec.js': 'share-codec.js',
 };
 
 const ASSET_EXT = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico']);
@@ -169,6 +212,22 @@ async function handler(req, res) {
 
   const mapped = STATIC_ROUTES[p];
   if (req.method === 'GET' && mapped) return sendFile(res, path.join(PUBLIC_DIR, mapped));
+
+  // 短链接 /s/<id> → 渲染分析页（内容由前端取回）
+  if (req.method === 'GET' && /^\/s\/([A-Za-z0-9]{3,32})$/.test(p)) {
+    return sendFile(res, path.join(PUBLIC_DIR, 'analyze.html'));
+  }
+
+  if (p === '/api/share' && req.method === 'POST') {
+    return createShare(req, res).catch((err) => json(res, 500, { error: err.message }));
+  }
+
+  const shareHit = p.match(/^\/api\/share\/([A-Za-z0-9]{3,32})$/);
+  if (shareHit && req.method === 'GET') {
+    const v = shares.get(shareHit[1]);
+    if (!v) return json(res, 404, { error: '分享内容不存在或已过期' });
+    return json(res, 200, { text: v.t });
+  }
 
   if (p === '/api/health' && req.method === 'GET') {
     const idx = buildIndex();

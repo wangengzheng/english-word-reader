@@ -12,6 +12,9 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
+  /* 音标点击跳转的发音查询站（s= 音标原样、非 ASCII 转百分号编码） */
+  var IPA_URL_BASE = 'https://englishsymbol.bizhoucun.com/english_voice?s=';
+
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, '&amp;')
@@ -65,6 +68,16 @@
     s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
     s = s.replace(/(^|[^\w])_([^_\n]+)_(?![\w])/g, '$1<em>$2</em>');
     s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+
+    // 音标：/kæn/ /həˈloʊ/ → 新标签页打开发音查询
+    // 约束：内容仅限字母 + IPA 字符（含 IPA Extensions、修饰符号、组合变音符号、
+    //       希腊字母 θ 等；排除中文/数字），且斜线不能紧贴在字母数字后，
+    //       这样 "a/b/c"、"and/or"、"24/7"、"BrE/AmE" 都不会误伤。
+    s = s.replace(/(^|[^A-Za-z0-9])(\/[a-zA-Z\u00C0-\u02FF\u0300-\u036F\u0370-\u03FF\u1AB0-\u1DFF]{1,40}\/)/g,
+      function (m, pre, phon) {
+        var href = IPA_URL_BASE + encodeURI(phon);
+        return pre + keep('<a class="ipa" href="' + href + '" target="_blank" rel="noopener noreferrer" title="查看音标发音 ↗">' + phon + '</a>');
+      });
 
     s = s.replace(/\u0000(\d+)\u0000/g, function (m, i) { return stash[+i]; });
     return s;

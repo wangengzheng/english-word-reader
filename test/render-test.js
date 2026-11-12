@@ -62,5 +62,19 @@ check('外链', link.includes('https://a.com'), link);
 const para = MD.mdToHtml('line one\nline two');
 check('段内换行 <br>', para === '<p>line one<br>line two</p>', para);
 
+/* 10. 音标链接 */
+const ipa = MD.mdToHtml('美式音标 /həˈloʊ/ 与 /kæn/，还有 /wiː/');
+check('音标 → 发音链接 ×3', (ipa.match(/class="ipa"/g) || []).length === 3, ipa);
+check('URL 编码 s=/wi%CB%90/', ipa.includes('s=/wi%CB%90/'), ipa);
+check('新标签页打开', ipa.includes('target="_blank"'), ipa);
+
+const neg = MD.mdToHtml('a/b/c and/or 24/7 BrE/AmE 和/或 x.com/a/b');
+check('误伤防护: a/b·and/or·24/7·BrE/AmE·中文/x.com', !neg.includes('class="ipa"'), neg);
+
+const strongIpa = MD.mdToHtml('**标准发音 /h/**：位于词首');
+check('加粗内的音标', strongIpa.includes('<strong>') && strongIpa.includes('class="ipa"'), strongIpa);
+const cjkIpa = MD.mdToHtml('音标/kæn/为');
+check('中文紧邻的音标', cjkIpa.includes('class="ipa"'), cjkIpa);
+
 console.log(fail ? '\nFAIL: ' + fail + ' 项未通过' : '\nALL PASS');
 process.exit(fail ? 1 : 0);
